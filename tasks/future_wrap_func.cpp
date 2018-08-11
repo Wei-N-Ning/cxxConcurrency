@@ -12,7 +12,9 @@ int _compute(int value) {
 }
 
 int execute(int value) {
-    std::future<int> fut = std::async(_compute, std::ref(value));
+    std::future<int> fut = std::async(
+        std::launch::async,
+        _compute, std::ref(value));
     return fut.get();
 }
 
