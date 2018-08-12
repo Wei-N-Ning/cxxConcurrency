@@ -4,3 +4,4 @@ project(C++ConcurrencyExamples)
 enable_testing()
 
 add_subdirectory(tasks)
+add_subdirectory(_cases)
