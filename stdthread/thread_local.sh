@@ -4,13 +4,13 @@
 # even though arr has static storage, its address
 # is unique to each thread
 
-source ./utilities.sh
+source ../utilities.sh
 
 buildProgram() {
     cat > /tmp/_.cpp <<EOF
 #include <thread>
 void compute() {
-    thread_local static int arr[] = {0xDE, 0xAD, 0xBE, 0xEF};
+    static thread_local int arr[] = {0xDE, 0xAD, 0xBE, 0xEF};
     arr[0]++;
 }
 int main() {
