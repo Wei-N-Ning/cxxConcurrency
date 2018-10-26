@@ -9,3 +9,7 @@ add_subdirectory(mutex)
 add_subdirectory(rwlocks)
 add_subdirectory(_cases)
 add_subdirectory(stdthread)
+if (UNIX)
+    # true for apple and linux
+    add_subdirectory(pthread)
+endif()
