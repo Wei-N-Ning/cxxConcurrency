@@ -46,3 +46,15 @@ add_test(NAME
     "pthread::barriers"
     COMMAND
     pthread_barriers)
+
+add_tinytest_executable(pthread_semaphores semaphores.cpp)
+set_target_properties(pthread_semaphores
+    PROPERTIES
+    CXX_STANDARD 14)
+target_link_libraries(pthread_semaphores
+    PUBLIC
+    pthread)
+add_test(NAME
+    "pthread::semaphores"
+    COMMAND
+    pthread_semaphores)
