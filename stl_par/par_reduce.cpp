@@ -1,7 +1,13 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest/doctest.h"
 
-#include <execution>
+// the current status of parallel execution policy in C++17 is a MESS
+// only intel's parallel stl and MSVC has full support
+// I don't want to go into vendor lock.
+
+// neither clang nor gcc supports as of version clang-9 and gcc 7.5
+
+//#include <execution>
 #include <vector>
 
 TEST_CASE("par: all_of") {
