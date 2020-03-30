@@ -1,3 +1,6 @@
 [submodule "tinyCUnit"]
 	path = tinyCUnit
 	url = http://github.com/powergun/tinyCUnit
+[submodule "doctest"]
+	path = doctest
+	url = https://github.com/onqtam/doctest
