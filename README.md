@@ -121,4 +121,7 @@ cmake \
 -DJEMALLOC_ROOT=/home/wein/work/tmp/jemalloc_dist ..
 ```
 
+note I have to run `make -j8 tests` to **actually build all the unit tests**!
+then running `make test` (or ctest) won't throw massive amount of errors
+
 
