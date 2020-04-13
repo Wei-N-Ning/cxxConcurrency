@@ -5,10 +5,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 enable_testing()
-include(tinyCUnit/tinyCUnit.cmake)
 
-add_library(doctest INTERFACE)
-target_include_directories(doctest INTERFACE doctest)
+add_subdirectory(vendor/doctest)
 
 add_subdirectory(tasks)
 add_subdirectory(mutex)

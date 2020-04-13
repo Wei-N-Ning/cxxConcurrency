@@ -13,14 +13,9 @@
 // count.
 // to make them thread-safe, atomic operations (check and lock)
 // are used
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#include "doctest/doctest.h"
 
-void RunTinyTests();
-
-void test_nothing() {
+TEST_CASE("TODO: semaphores") {
     ;
-}
-
-int main(int argc, char **argv) {
-    RunTinyTests();
-    return 0;
 }

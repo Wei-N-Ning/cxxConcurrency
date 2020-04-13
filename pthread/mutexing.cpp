@@ -5,9 +5,11 @@
 // source
 // master cxx mt L893 (pthread's mutex)
 
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#include "doctest/doctest.h"
+
 #include <iostream>
 #include <iterator>
-#include <random>
 #include <vector>
 #include <cassert>
 
@@ -69,14 +71,7 @@ int execute() {
 
 }
 
-void RunTinyTests();
-
-void test_execute() {
+TEST_CASE("mutex") {
     execute();
-}
-
-int main() {
-    RunTinyTests();
-    return 0;
 }
 

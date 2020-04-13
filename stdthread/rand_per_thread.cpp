@@ -6,7 +6,8 @@
 
 // mt19937:
 // http://www.cplusplus.com/reference/random/mt19937/
-
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#include "doctest/doctest.h"
 
 #include <iostream>
 #include <random>
@@ -27,9 +28,7 @@ int randGen(int min_, int max_) {
     return distribution(generator);
 }
 
-void RunTinyTests();
-
-void test_randGen() {
+TEST_CASE("thread has its own generator") {
     // note how the number remains the same between executions
     // (main thread only)
     std::cout
@@ -37,9 +36,4 @@ void test_randGen() {
     << randGen(1, 0x1111111)
     << randGen(1, 0x1111111)
     << std::endl;
-}
-
-int main() {
-    RunTinyTests();
-    return 0;
 }

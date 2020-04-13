@@ -19,6 +19,9 @@
 // the barrier object, using the pthread_barrier_wait()
 // function will they continue executing
 
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#include "doctest/doctest.h"
+
 #include <cassert>
 
 #include <pthread.h>
@@ -56,13 +59,8 @@ void execute() {
 
 }
 
-void RunTinyTests();
 
-void test_execute() {
+TEST_CASE("test barrier") {
     execute();
 }
 
-int main(int argc, char **argv) {
-    RunTinyTests();
-    return 0;
-}

@@ -1,9 +1,7 @@
 
-add_tinytest_executable(rand_per_thread
+add_executable(rand_per_thread
     rand_per_thread.cpp)
-set_target_properties(rand_per_thread
-    PROPERTIES
-    CXX_STANDARD 14)
+target_link_libraries(rand_per_thread doctest)
 add_test(NAME
     "stdthread::random-number-per-thread"
     COMMAND

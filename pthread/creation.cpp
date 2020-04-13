@@ -4,6 +4,8 @@
 
 // source:
 // master cxx mt L800 (pthread interface)
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#include "doctest/doctest.h"
 
 #include <cassert>
 
@@ -41,14 +43,7 @@ int execute() {
 
 }
 
-void RunTinyTests();
-
-void test_execute() {
+TEST_CASE("create pthread") {
     execute();
-}
-
-int main() {
-    RunTinyTests();
-    return 0;
 }
 

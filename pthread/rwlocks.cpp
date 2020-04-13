@@ -21,6 +21,8 @@
 //mprotect(0x7fa735d4f000, 8388608, PROT_READ|PROT_WRITE) = 0
 //mprotect(0x7fa73554e000, 8388608, PROT_READ|PROT_WRITE) = 0
 
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#include "doctest/doctest.h"
 #include <cassert>
 
 #include <pthread.h>
@@ -61,13 +63,6 @@ void execute() {
 
 }
 
-void RunTinyTests();
-
-void test_execute() {
+TEST_CASE("read-write locks") {
     execute();
-}
-
-int main(int argc, char **argv) {
-    RunTinyTests();
-    return 0;
 }
