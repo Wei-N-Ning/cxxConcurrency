@@ -124,4 +124,8 @@ cmake \
 note I have to run `make -j8 tests` to **actually build all the unit tests**!
 then running `make test` (or ctest) won't throw massive amount of errors
 
+also note that I need to use `CMAKE_INSTALL_PREFIX` while building hpx,
+see: <https://cmake.org/cmake/help/v3.0/variable/CMAKE_INSTALL_PREFIX.html>
+this is equivalent to `./configure --prefix=<dir>`
+
 
