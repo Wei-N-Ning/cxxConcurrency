@@ -7,3 +7,6 @@
 [submodule "vendor/doctest"]
 	path = vendor/doctest
 	url = https://github.com/onqtam/doctest
+[submodule "vendor/hpx"]
+	path = vendor/hpx
+	url = https://github.com/STEllAR-GROUP/hpx
