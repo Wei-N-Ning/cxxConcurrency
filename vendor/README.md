@@ -19,3 +19,5 @@ cmake \
 -DCMAKE_INSTALL_PREFIX=/home/wein/work/dev/cxx/github.com/powergun/cxxConcurrency/vendor/hpx-1.4.1 ..
 ```
 
+keep both the installation dir and the source dir in the `vendor` directory
+
