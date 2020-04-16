@@ -136,7 +136,7 @@ also note that I need to use `CMAKE_INSTALL_PREFIX` while building hpx,
 see: <https://cmake.org/cmake/help/v3.0/variable/CMAKE_INSTALL_PREFIX.html>
 this is equivalent to `./configure --prefix=<dir>`
 
-## Boost linking does right
+## Boost linking done right
 
 while building hpx runtime (a shared library) I got this error, saying
 I could not build this shared library from the statically linked boost
@@ -278,5 +278,22 @@ the Python process's function table in GDB
 it does not see any boost functions, nor does it see the `compute()` function,
 the only one that is exported in the shared library.
 
+### RPath linking again
 
+so far, I'm able to build hpx (see `vendor/get-hpx.sh`) and run its tests (built separately `make -j12 tests`)
+I can also successfully build the "helloworld" example from its official doc, see 
 
+hpx_lang/hello_hpx.cpp
+
+I find that the resulting executable is linked against the hardcoded shared libraries (hpx, hwloc and jemalloc) in the
+vendor directory. This is not good.
+
+I can either try to force hpx linking against the static version of its upstream libraries - the practicality of such
+doing has a big question mark, see the "unfinished question" above - or, use rpath linking and ship the upstream libraries
+with my binary distribution.
+
+This seems reasonable is a common picture. Here is how to achieve this via CMake:
+
+recipe: <https://stackoverflow.com/questions/43330165/how-to-link-a-shared-library-with-cmake-with-relative-path>
+
+cmake doc: <https://gitlab.kitware.com/cmake/community/-/wikis/doc/cmake/RPATH-handling>
