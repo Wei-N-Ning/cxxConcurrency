@@ -5,8 +5,8 @@
 set -euo pipefail
 
 # parameters
-version="${1:?missing version!}"
-dest=$(python -c "import os;print(os.path.realpath('${dest:-.}'))")
+version="5.2.1"
+dest=$(python -c "import os;print(os.path.realpath('${1:?missing dest}'))")
 
 # static
 thisfile=$(python -c "import os;print(os.path.realpath('${BASH_SOURCE[0]}'))")
