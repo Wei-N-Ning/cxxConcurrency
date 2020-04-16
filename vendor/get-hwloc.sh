@@ -27,7 +27,7 @@ download_untar() {
 }
 
 do_install() {
-    ./configure --prefix="${dest}"
+    ./configure CFLAGS=-fPIC CXXFLAGS=-fPIC --prefix="${dest}" >/dev/null
     make -j"${para}" && make install
 }
 

@@ -156,6 +156,12 @@ this explains `-j 12` - it does make compiling boost faster:
 
 <https://stackoverflow.com/questions/33566782/building-all-of-boost-in-a-few-minutes>
 
+### how to set fPIC with automake / configure
+
+`./configure CFLAGS=-fPIC CXXFLAGS=-fPIC`
+
+see: <https://stackoverflow.com/questions/629961/how-can-i-set-ccshared-fpic-while-executing-configure>
+
 ### how to verify the resulting static libs ARE indeed built with fPIC
 
 there is no direct method. I find that the quickest way is to create
