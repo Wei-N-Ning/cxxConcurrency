@@ -9,6 +9,7 @@ dest=$(python -c "import os;print(os.path.realpath('${2:-.}'))")
 # static
 thisfile=$(python -c "import os;print(os.path.realpath('${BASH_SOURCE[0]}'))")
 thisdir=$(dirname "${thisfile}")
+para=$(python -c "import multiprocessing as m;print(m.cpu_count())")
 
 download_untar() {
     local version_=$(perl -wnl -E 's/\./_/g; say' <<<${version})
@@ -26,7 +27,7 @@ download_untar() {
 
 do_install() {
     local link=${1:?missing link param (static or dynamic)}
-    ./b2 install cxxflags='-fPIC' cflags='-fPIC' --link="${link}" --prefix="${dest}"
+    ./b2 -j "${para}" install cxxflags='-fPIC' cflags='-fPIC' --link="${link}" --prefix="${dest}"
 }
 
 cd /tmp
