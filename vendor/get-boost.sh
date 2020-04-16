@@ -26,7 +26,7 @@ download_untar() {
 
 do_install() {
     local link=${1:?missing link param (static or dynamic)}
-    ./b2 install --link="${link}" --prefix="${dest}"
+    ./b2 install cxxflags='-fPIC' cflags='-fPIC' --link="${link}" --prefix="${dest}"
 }
 
 cd /tmp

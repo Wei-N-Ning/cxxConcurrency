@@ -12,6 +12,10 @@ boost_dir="${thisdir}/$(ls "${thisdir}" | perl -wnl -E 'say if /^boost/i')"
 hwloc_dir="${thisdir}/$(ls "${thisdir}" | perl -wnl -E 'say if /^hwloc/i')"
 jemalloc_dir="${thisdir}/$(ls "${thisdir}" | perl -wnl -E 'say if /^jemalloc/i')"
 
+# cross-platform version: 
+# python -c "import multiprocessing as m;print(m.cpu_count())"
+para=$(lscpu | perl -wnl -E '/^CPU\(s\):\s+(\d+)/ and say $1')
+
 do_download() {
     local fname="${version}"
     local fext="${fname}.tar.gz"
@@ -35,7 +39,7 @@ do_build() {
         -DHPX_WITH_MALLOC=jemalloc \
         -DJEMALLOC_ROOT="${jemalloc_dir}" \
         -DCMAKE_INSTALL_PREFIX=${dest} ..
-    make -j8
+    make -j"${para}"
     make install
 }
 

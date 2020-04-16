@@ -11,6 +11,7 @@ dest=$(python -c "import os;print(os.path.realpath('${1:?missing dest}'))")
 # static
 thisfile=$(python -c "import os;print(os.path.realpath('${BASH_SOURCE[0]}'))")
 thisdir=$(dirname "${thisfile}")
+para=$(lscpu | perl -wnl -E '/^CPU\(s\):\s+(\d+)/ and say $1')
 
 download_untar() {
     local filename="hwloc-${version}"
@@ -27,7 +28,7 @@ download_untar() {
 
 do_install() {
     ./configure --prefix="${dest}"
-    make -j8 && make install
+    make -j"${para}" && make install
 }
 
 cd /tmp
