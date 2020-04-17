@@ -1,5 +1,9 @@
 # C++ Concurrency and Parallelism
 
+## TBB
+
+see tbb_lang, including some devOps nodes
+
 ## future and thread pool
 
 C++ 17 (GCC 7.5.0) does not ship threadpool.
