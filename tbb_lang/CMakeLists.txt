@@ -1,5 +1,5 @@
 
-set(TBB_DIR ${PROJECT_SOURCE_DIR}/vendor/)
+set(TBB_DIR ${PROJECT_SOURCE_DIR}/vendor/oneTBB)
 include(${TBB_DIR}/cmake/TBBBuild.cmake)
 
 # Build Intel TBB with enabled Community Preview Features (CPF).
