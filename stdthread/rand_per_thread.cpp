@@ -3,6 +3,10 @@
 //
 // source:
 // master cxx mt L387
+// in a nut shell, recall the random engine ctor can take a seed value?
+// this per-thread random engine object uses the thread id as the seed,
+// therefore if there are multiple threads, each one has different random
+// characteristic
 
 // mt19937:
 // http://www.cplusplus.com/reference/random/mt19937/
