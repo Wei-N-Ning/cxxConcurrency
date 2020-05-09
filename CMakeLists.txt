@@ -11,7 +11,7 @@ set(CMAKE_BUILD_TYPE Release)
 
 set(Boost_NO_SYSTEM_PATHS TRUE)
 set(Boost_USE_STATIC_LIBS TRUE)
-set(BOOST_ROOT ${PROJECT_SOURCE_DIR}/vendor/boost_1.72.0)
+set(BOOST_ROOT ${PROJECT_SOURCE_DIR}/vendor/boost-1.72.0)
 find_package(Boost 1.72.0 REQUIRED COMPONENTS regex)
 
 add_subdirectory(tasks)
