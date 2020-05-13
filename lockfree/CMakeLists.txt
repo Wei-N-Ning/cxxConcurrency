@@ -1,0 +1,4 @@
+
+add_executable(lockfree_counter counter.cpp)
+target_link_libraries(lockfree_counter PRIVATE doctest)
+add_test(NAME "lockfree::counter" COMMAND lockfree_counter)
