@@ -7,6 +7,7 @@
 
 #include <thread>
 #include <deque>
+#include <algorithm>
 
 struct ThreadPool {
     std::deque<std::thread> pool{};
@@ -27,11 +28,17 @@ struct ThreadPool {
         }
     }
 
-    ~ThreadPool() {
+    void join() {
         while (!pool.empty()) {
-            pool.front().join();
+            if (pool.front().joinable()) {
+                pool.front().join();
+            }
             pool.pop_front();
         }
+    }
+
+    ~ThreadPool() {
+        join();
     }
 };
 
