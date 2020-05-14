@@ -13,6 +13,8 @@
 #include <functional>
 #include <deque>
 
+#include "thread_pool.h"
+
 // CAS:
 // https://en.cppreference.com/w/cpp/atomic/atomic/compare_exchange
 // also: https://en.wikipedia.org/wiki/Compare-and-swap
@@ -39,33 +41,6 @@ private:
 int fib(int n) {
     return (n == 1 or n == 0) ? 1 : fib(n - 1) + fib(n - 2);
 }
-
-struct ThreadPool {
-    std::deque<std::thread> pool{};
-    std::size_t max_size{std::thread::hardware_concurrency()};
-
-    ThreadPool() = default;
-
-    explicit ThreadPool(std::size_t sz) : max_size(sz) {}
-
-    template<typename... Ts>
-    void do_work(Ts &&... args) {
-        if (pool.size() < max_size) {
-            pool.emplace_back(std::forward<Ts>(args)...);
-        } else {
-            pool.front().join();
-            pool.pop_front();
-            pool.emplace_back(std::forward<Ts>(args)...);
-        }
-    }
-
-    ~ThreadPool() {
-        while (!pool.empty()) {
-            pool.front().join();
-            pool.pop_front();
-        }
-    }
-};
 
 TEST_CASE ("") {
     using namespace std;
