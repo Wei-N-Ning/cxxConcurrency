@@ -14,6 +14,9 @@ set(Boost_USE_STATIC_LIBS TRUE)
 set(BOOST_ROOT ${PROJECT_SOURCE_DIR}/vendor/boost-1.72.0)
 find_package(Boost 1.72.0 REQUIRED COMPONENTS regex)
 
+# this is recommended way to bring in and link to the platform specific thread library
+find_package(Threads)
+
 add_subdirectory(tasks)
 add_subdirectory(mutex)
 add_subdirectory(rwlocks)

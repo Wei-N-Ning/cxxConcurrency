@@ -10,3 +10,11 @@ here is a high-rating threadpool: <https://github.com/progschj/ThreadPool>
 
 ## Concurrent data structures
 
+## DevOps
+
+### use Threads::Threads instead of pthread for cross-platform portability
+
+see the top level CMakeLists 
+
+find_package(Threads) brings in a new target called `Threads::Threads`, which is
+resolved to pthread for POSIX platforms
