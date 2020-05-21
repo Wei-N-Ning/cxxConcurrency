@@ -15,3 +15,6 @@ add_executable(stdthread_thread_pool thread_pool.cpp)
 target_link_libraries(stdthread_thread_pool PRIVATE doctest Threads::Threads)
 add_test(NAME "stdthread::thread-pool" COMMAND stdthread_thread_pool)
 
+add_executable(stdthread_scoped_thread scoped_thread.cpp)
+target_link_libraries(stdthread_scoped_thread PRIVATE doctest Threads::Threads)
+add_test(NAME "stdthread::scoped-thread" COMMAND stdthread_scoped_thread)
