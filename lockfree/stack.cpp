@@ -7,7 +7,7 @@
 #include "doctest/doctest.h"
 
 #include <atomic>
-#include "thread_pool.h"
+#include "../stdthread/thread_pool.hh"
 
 // expert C++ L6175
 // lockfree stack with leaking issue

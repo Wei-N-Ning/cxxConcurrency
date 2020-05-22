@@ -22,4 +22,11 @@ I created a FuturePool using the same deque based mechanism, see: ../stdthread/t
 > the standard hints that std::async() maybe implemented using a thread pool
 > on windows, std::async is significantl faster
 
-TODO: test it out!
+see the comparison of: 
+
+- my (incorrect) thread pool
+- my (also incorrect) future pool
+- boost asio thread pool (but it also creates as many pthreads as there are jobs???!!!)
+- as many futures as it needs
+
+the advantage is not very obvious (workload compute 128 fib numbers, each input being 40)

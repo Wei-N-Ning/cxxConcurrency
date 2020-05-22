@@ -6,14 +6,12 @@
 
 #include "doctest/doctest.h"
 
-#include <thread>
 #include <atomic>
 #include <vector>
 #include <memory>
 #include <functional>
-#include <deque>
 
-#include "thread_pool.h"
+#include "../stdthread/thread_pool.hh"
 
 // CAS:
 // https://en.cppreference.com/w/cpp/atomic/atomic/compare_exchange
