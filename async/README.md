@@ -12,3 +12,7 @@ source: mastering c++ programming L5803
 > Rejected
 > Fulfilled
 
+## Future Pool
+
+inspired by optimized C++ L7656 (prefer std::async to std::thread), 
+I created a FuturePool using the same deque based mechanism, see: ../stdthread/thread_pool.cpp

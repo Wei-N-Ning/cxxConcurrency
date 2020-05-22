@@ -11,6 +11,7 @@
 #include <vector>
 #include <thread>
 #include <map>
+#include <future>
 
 // mastering c++ programming L5676
 
@@ -27,18 +28,41 @@ struct ThreadPool {
 
     template<typename... Ts>
     void do_work(Ts &&... args) {
-        if (pool.size() < max_size) {
-            pool.emplace_back(std::forward<Ts>(args)...);
-        } else {
+        if (pool.size() >= max_size) {
             pool.front().join();
             pool.pop_front();
-            pool.emplace_back(std::forward<Ts>(args)...);
         }
+        pool.emplace_back(std::forward<Ts>(args)...);
     }
 
     ~ThreadPool() {
         while (!pool.empty()) {
             pool.front().join();
+            pool.pop_front();
+        }
+    }
+};
+
+struct FuturePool {
+    std::deque<std::future<void>> pool{};
+    std::size_t max_size{std::thread::hardware_concurrency()};
+
+    FuturePool() = default;
+    explicit FuturePool(std::size_t sz): max_size(sz) {}
+
+    template<typename F>
+    void do_work(F f) {
+        if (pool.size() >= max_size) {
+            pool.front().get();
+            pool.pop_front();
+        }
+        auto fut = std::async(std::launch::async, f);
+        pool.push_back(std::move(fut));
+    }
+
+    ~FuturePool() {
+        while (!pool.empty()) {
+            pool.front().get();
             pool.pop_front();
         }
     }
@@ -75,9 +99,18 @@ struct ThreadPool {
 // one core to all cores speed up: 4.771
 TEST_CASE ("deque-based thread pool") {
     using namespace std;
-    ThreadPool tp;
-
     vector<int> workload(40, 40);
-    for_each(begin(workload), end(workload),
-             [&tp](int work) { tp.do_work(fib, work); });
+
+    {
+        ThreadPool tp;
+        for_each(begin(workload), end(workload),
+                 [&tp](int work) { tp.do_work(fib, work); });
+    }
+
+    {
+        FuturePool fp;
+        for_each(begin(workload), end(workload), [&fp](int work) {
+            fp.do_work([&]() { fib(work); });
+        });
+    }
 }
