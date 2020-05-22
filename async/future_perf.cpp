@@ -30,6 +30,13 @@
 // see: https://stackoverflow.com/questions/55873027/c-which-thread-pool-is-cppreference-com-talking-about
 // can also confirm this by looking into the gcc header source code
 
+// the verdict:
+// boost::asio::thread-pool uses only 12 threads
+// this one (https://github.com/progschj/ThreadPool) also does the same (see his blog)
+// the incorrect thread-pool and future-pool I wrote "happens" to also use 12 threads but it still calls N times
+// the thread constructor
+// lastly, the "future" scenario creates 128 threads (128 is the number of works)
+
 #include <cstring>
 #include <stdexcept>
 #include <algorithm>
@@ -39,6 +46,7 @@
 
 #include "../stdthread/thread_pool.hh"
 #include "future_pool.hh"
+#include "../stdthread/ThreadPool.hh"
 
 #include <boost/asio.hpp>
 
@@ -46,7 +54,9 @@ int fib_(int n) {
     return (n == 1 or n == 0) ? 1 : fib_(n - 1) + fib_(n - 2);
 }
 
-int fib(int n) {
+int fib(int n) { return fib_(n); }
+
+int fib_fx(int n) {
     // fib now has side effects lol
     auto o = fib_(n);
     using namespace std;
@@ -96,6 +106,16 @@ int main(int argc, char *argv[]) {
             boost::asio::post(tp, [work]() { fib(work); });
         }
         tp.join();
+    } else if (std::strcmp("ThreadPool", argv[1]) == 0) {
+        ThreadPoolGithub::ThreadPool tp(std::thread::hardware_concurrency());
+        std::vector<std::future<int>> futs{};
+        futs.reserve(std::size(works));
+        for (auto work : works) {
+            futs.push_back(tp.enqueue(fib, work));
+        }
+        for (auto &fut : futs) {
+            fut.get();
+        }
     }
     else {
         throw std::runtime_error("accepted keywords are: \n"
@@ -103,7 +123,8 @@ int main(int argc, char *argv[]) {
                                  "future-pool\n"
                                  "future\n"
                                  "seq\n"
-                                 "boost-thread-pool\n");
+                                 "boost-thread-pool\n"
+                                 "ThreadPool\n");
     }
     return 0;
 }
