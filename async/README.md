@@ -16,3 +16,10 @@ source: mastering c++ programming L5803
 
 inspired by optimized C++ L7656 (prefer std::async to std::thread), 
 I created a FuturePool using the same deque based mechanism, see: ../stdthread/thread_pool.cpp
+
+> the template function std::async() runs a callable object in the context
+> of a thread but the implementation is allowed to reuse threads
+> the standard hints that std::async() maybe implemented using a thread pool
+> on windows, std::async is significantl faster
+
+TODO: test it out!
