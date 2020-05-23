@@ -7,7 +7,8 @@
 #include "doctest/doctest.h"
 
 #include <atomic>
-#include "../stdthread/thread_pool.hh"
+#include <thread>
+#include <boost/asio.hpp>
 
 // expert C++ L6175
 // lockfree stack with leaking issue
@@ -44,39 +45,64 @@ public:
     void push() {
         Node *new_elem = new Node{};
         new_elem->next = head.load();
+        // []<--[]<--[]<--... <--[]
+        //                       []<--[]
         while (!head.compare_exchange_weak(new_elem->next, new_elem));
+        //                              if head is new_elem->next, then
+        //                                 head becomes new_elem
     }
 
     void pop() {
         Node *old_head = head.load();
+        // []<--[]<--[]<--... <--[]<--[]
+        //                    <--[]
         while (!head.compare_exchange_weak(old_head, old_head->next));
+        // if head is old_head, then
+        //    head becomes old_head->next
+        // (old head is gone from the chain)
     }
 
 private:
     std::atomic<Node *> head{nullptr};
 };
 
+int fib(int n) {
+    return (n == 1 or n == 0) ? 1 : fib(n - 1) + fib(n - 2);
+}
+
 TEST_CASE ("") {
     Stack st;
-    CHECK_EQ(st.size(), 0);
-    std::size_t work_size = 1024;
+        CHECK_EQ(st.size(), 0);
+    std::size_t work_size = 128;
 
-    ThreadPool tp;
-    for (auto i = 0; i < work_size; ++i) {
-        tp.do_work([&st, n = i]() {
-            for (int i = 0; i < 1024 * 1024 * n; ++i);
-            st.push();
-        });
+    {
+        boost::asio::thread_pool tp(std::thread::hardware_concurrency());
+        for (auto i = 0; i < work_size; ++i) {
+            boost::asio::post(
+                tp,
+                [&st]() {
+                    fib(30);
+                    st.push();
+                }
+            );
+        }
+        tp.join();
     }
-    tp.join();
     CHECK_EQ(st.size(), work_size);
 
-    for (auto i = 0; i < work_size; ++i) {
-        tp.do_work([&st, n = i]() {
-            for (int i = 0; i < 1024 * 1024 * n; ++i);
-            st.pop();
-        });
+    {
+        boost::asio::thread_pool tp(std::thread::hardware_concurrency());
+        for (auto i = 0; i < work_size; ++i) {
+            boost::asio::post(
+                tp,
+                [&st]() {
+                    fib(31);
+                    st.pop();
+                }
+            );
+        }
+        tp.join();
     }
-    tp.join();
-    CHECK_EQ(st.size(), 0);
+
+     CHECK_EQ(st.size(), 0);
 }
