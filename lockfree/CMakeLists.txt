@@ -7,3 +7,8 @@ add_executable(lockfree_stack stack.cpp)
 target_link_libraries(lockfree_stack PRIVATE doctest Threads::Threads)
 target_include_directories(lockfree_stack PRIVATE ${Boost_INCLUDE_DIRS})
 add_test(NAME "lockfree::stack" COMMAND lockfree_stack)
+
+add_executable(lockfree_parallel_cells parallel_cells.cpp)
+target_link_libraries(lockfree_parallel_cells PRIVATE doctest Threads::Threads)
+target_include_directories(lockfree_parallel_cells PRIVATE ${Boost_INCLUDE_DIRS})
+add_test(NAME "lockfree::parallel-cells" COMMAND lockfree_parallel_cells)
