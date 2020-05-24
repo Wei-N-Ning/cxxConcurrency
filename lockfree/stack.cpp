@@ -15,7 +15,22 @@
 // lockfree stack with leaking issue
 // shows the basic use of CAS idiom
 
+template<typename T>
 struct Node {
+    T data;
+
+    explicit Node(const T &val) : data{val} {}
+
+    explicit Node(T &&val) : data{val} {}
+
+    Node(const Node &) = default;
+
+    Node(Node &&) noexcept = default;
+
+    Node &operator=(const Node &) = default;
+
+    Node &operator=(Node &&) noexcept = default;
+
     std::shared_ptr<Node> next{nullptr};
 };
 
@@ -41,6 +56,7 @@ struct Node {
 // https://en.cppreference.com/w/cpp/atomic/atomic_compare_exchange
 // note that the expected value must be of a pointer type
 // the "atomic shared ptr" must also be passed to the free function as pointer
+template<typename T>
 class Stack {
 public:
     [[nodiscard]] std::size_t size() const {
@@ -49,7 +65,7 @@ public:
         return sz;
     }
 
-    void push() {
+    void push(const T &val) {
         // in action 2nd P/234
         // the gist of lockfree push()
         // if it (compare_exchange_weak()) returns false to indicate that the
@@ -61,7 +77,7 @@ public:
         // Also, because you’re looping directly on failure, you can use
         // compare_exchange_weak, which can result in more optimal code than
         // compare_exchange_strong on some architectures
-        auto new_elem = std::make_shared<Node>();
+        auto new_elem = std::make_shared<Node<T>>(val);
         new_elem->next = std::atomic_load(&head);
         // []<--[]<--[]<--... <--[]
         //                       []<--[]
@@ -71,27 +87,39 @@ public:
         //                                 head becomes new_elem
     }
 
-    void pop() {
+    void pop(T &val) {
         auto old_head = std::atomic_load(&head);
         // []<--[]<--[]<--... <--[]<--[]
         //                    <--[]
-        while (!std::atomic_compare_exchange_weak(&head, &old_head, old_head->next));
+        while (old_head &&
+            !std::atomic_compare_exchange_weak(&head, &old_head, old_head->next));
         // if head is old_head, then
         //    head becomes old_head->next
         // (old head is gone from the chain)
+        val = old_head->data;
     }
 
 private:
-    std::shared_ptr<Node> head{nullptr};
+    std::shared_ptr<Node<T>> head{nullptr};
 };
 
 int fib(int n) {
     return (n == 1 or n == 0) ? 1 : fib(n - 1) + fib(n - 2);
 }
 
-TEST_CASE ("") {
-    Stack st;
-        CHECK_EQ(st.size(), 0);
+TEST_CASE ("is atomic shared_ptr lock-free??") {
+    // this shows that atomic_load, when given a shared_ptr, uses lock
+    // therefore it has perf impact
+    // see: in action 2nd P/249
+    using PNode = std::shared_ptr<Node<int>>;
+    PNode pNode{nullptr};
+    CHECK(std::atomic_is_lock_free(&pNode));
+}
+
+TEST_CASE ("push then pop") {
+    Stack<int> st;
+    CHECK_EQ(st.size(), 0);
+
     std::size_t work_size = 128;
 
     {
@@ -99,9 +127,9 @@ TEST_CASE ("") {
         for (auto i = 0; i < work_size; ++i) {
             boost::asio::post(
                 tp,
-                [&st]() {
-                    fib(30);
-                    st.push();
+                [&st, val = i]() {
+                    fib(20);
+                    st.push(val);
                 }
             );
         }
@@ -114,14 +142,37 @@ TEST_CASE ("") {
         for (auto i = 0; i < work_size; ++i) {
             boost::asio::post(
                 tp,
-                [&st]() {
-                    fib(31);
-                    st.pop();
+                [&st, val = i]() mutable {
+                    fib(21);
+                    st.pop(val);
                 }
             );
         }
         tp.join();
     }
 
-     CHECK_EQ(st.size(), 0);
+    CHECK_EQ(st.size(), 0);
 }
+
+//TEST_CASE ("push and pop at the same time") {
+//    Stack<int> st;
+//    CHECK_EQ(st.size(), 0);
+//    std::size_t work_size = 256;
+//    {
+//        boost::asio::thread_pool tp(std::thread::hardware_concurrency());
+//        for (auto i = 0; i < work_size; ++i) {
+//            boost::asio::post(
+//                tp,
+//                [&st, val = i]() {
+//                    auto o = fib(30);
+//                    if (val % 2 == 0) {
+//                        st.push(o);
+//                    } else {
+//                        st.pop(o);
+//                    }
+//                }
+//            );
+//        }
+//        tp.join();
+//    }
+//}
