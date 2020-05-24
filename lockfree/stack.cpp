@@ -50,6 +50,17 @@ public:
     }
 
     void push() {
+        // in action 2nd P/234
+        // the gist of lockfree push()
+        // if it (compare_exchange_weak()) returns false to indicate that the
+        // comparison failed (for example, because head was modified by another
+        // thread), the value supplied as the first parameter (new_node->next)
+        // is updated to the current value of head. You therefore don't have to
+        //  reload head each time through the loop, because the compiler does
+        //  that for you.
+        // Also, because you’re looping directly on failure, you can use
+        // compare_exchange_weak, which can result in more optimal code than
+        // compare_exchange_strong on some architectures
         auto new_elem = std::make_shared<Node>();
         new_elem->next = std::atomic_load(&head);
         // []<--[]<--[]<--... <--[]
