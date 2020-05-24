@@ -10,3 +10,7 @@ add_test(NAME "atomic::compare-exchange" COMMAND atomic_compare_exchange)
 add_executable(atomic_shared_ptr shared_ptr.cpp)
 target_link_libraries(atomic_shared_ptr PRIVATE doctest Threads::Threads)
 add_test(NAME "atomic::shared-ptr" COMMAND atomic_shared_ptr)
+
+add_executable(atomic_spin_lock spin_lock.cpp)
+target_link_libraries(atomic_spin_lock PRIVATE doctest Threads::Threads)
+add_test(NAME "atomic::spin-lock" COMMAND atomic_spin_lock)
