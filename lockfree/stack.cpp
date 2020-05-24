@@ -47,6 +47,7 @@ public:
         new_elem->next = head.load();
         // []<--[]<--[]<--... <--[]
         //                       []<--[]
+        //                                      expected val  desired val
         while (!head.compare_exchange_weak(new_elem->next, new_elem));
         //                              if head is new_elem->next, then
         //                                 head becomes new_elem
