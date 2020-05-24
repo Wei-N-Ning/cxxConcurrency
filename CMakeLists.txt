@@ -30,3 +30,7 @@ add_subdirectory(communication)
 add_subdirectory(get_info)
 add_subdirectory(lockfree)
 add_subdirectory(async)
+add_subdirectory(synchronize)
+add_subdirectory(atomic)
+
+
