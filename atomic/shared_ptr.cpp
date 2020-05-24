@@ -11,6 +11,8 @@
 
 // in action 2nd P/164
 // use atomic free functions
+// see also ../lockfree/stack.cpp for how this helps me to implement the CAS-
+// based stack, without leaking memory.
 TEST_CASE ("") {
     std::vector<int> v3{1, 2, 3};
     auto p = std::make_shared<std::vector<int>>(10, 2);

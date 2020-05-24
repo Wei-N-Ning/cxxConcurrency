@@ -8,6 +8,7 @@
 
 #include <atomic>
 #include <thread>
+#include <memory>
 #include <boost/asio.hpp>
 
 // expert C++ L6175
@@ -15,7 +16,7 @@
 // shows the basic use of CAS idiom
 
 struct Node {
-    Node *next{nullptr};
+    std::shared_ptr<Node> next{nullptr};
 };
 
 // L6209
@@ -31,40 +32,46 @@ struct Node {
 // wait()
 // notify_one()
 // notify_all()
-using ad = std::atomic<Node>;
 
-// NOTE: not solving the memory leak issue
+// UPDATE:
+// after reading: in action 2nd P/164, I realize I can resolve the memory leak issue
+// caused by using raw pointer - I need to switch to using shared_ptr and taking
+// advantage of the atomic free function STL provides for std::shared_ptr,
+// see:
+// https://en.cppreference.com/w/cpp/atomic/atomic_compare_exchange
+// note that the expected value must be of a pointer type
+// the "atomic shared ptr" must also be passed to the free function as pointer
 class Stack {
 public:
     [[nodiscard]] std::size_t size() const {
         std::size_t sz{0};
-        for (auto p = head.load(); p != nullptr; p = p->next, ++sz);
+        for (auto p = std::atomic_load(&head); p != nullptr; p = p->next, ++sz);
         return sz;
     }
 
     void push() {
-        Node *new_elem = new Node{};
-        new_elem->next = head.load();
+        auto new_elem = std::make_shared<Node>();
+        new_elem->next = std::atomic_load(&head);
         // []<--[]<--[]<--... <--[]
         //                       []<--[]
         //                                      expected val  desired val
-        while (!head.compare_exchange_weak(new_elem->next, new_elem));
+        while (!std::atomic_compare_exchange_weak(&head, &new_elem->next, new_elem));
         //                              if head is new_elem->next, then
         //                                 head becomes new_elem
     }
 
     void pop() {
-        Node *old_head = head.load();
+        auto old_head = std::atomic_load(&head);
         // []<--[]<--[]<--... <--[]<--[]
         //                    <--[]
-        while (!head.compare_exchange_weak(old_head, old_head->next));
+        while (!std::atomic_compare_exchange_weak(&head, &old_head, old_head->next));
         // if head is old_head, then
         //    head becomes old_head->next
         // (old head is gone from the chain)
     }
 
 private:
-    std::atomic<Node *> head{nullptr};
+    std::shared_ptr<Node> head{nullptr};
 };
 
 int fib(int n) {
