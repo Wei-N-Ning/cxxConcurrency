@@ -113,7 +113,7 @@ TEST_CASE ("is atomic shared_ptr lock-free??") {
     // see: in action 2nd P/249
     using PNode = std::shared_ptr<Node<int>>;
     PNode pNode{nullptr};
-    CHECK(std::atomic_is_lock_free(&pNode));
+    CHECK_FALSE(std::atomic_is_lock_free(&pNode));
 }
 
 TEST_CASE ("push then pop") {
