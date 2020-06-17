@@ -12,6 +12,13 @@
 #include <optional>
 #include <iostream>
 
+// c++ boost app dev P/308
+// you must not use STL container with boost's shared memory segment
+
+// see also:
+// https://theboostcpplibraries.com/boost.interprocess-managed-shared-memory
+// https://www.boost.org/doc/libs/master/doc/html/interprocess.html#interprocess.intro.introduction_building_interprocess
+
 struct Task
 {
     explicit Task( int x ) : value( x )
