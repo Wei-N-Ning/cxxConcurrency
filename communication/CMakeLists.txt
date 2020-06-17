@@ -15,3 +15,7 @@ target_link_libraries(comm_boost_interprocess_atomic PRIVATE Threads::Threads ${
 add_executable(comm_boost_interprocess_deque boost_interprocess_deque.cpp)
 target_include_directories(comm_boost_interprocess_deque PRIVATE ${Boost_INCLUDE_DIRS})
 target_link_libraries(comm_boost_interprocess_deque PRIVATE Threads::Threads ${LIB_RT})
+
+add_executable(comm_boost_interprocess_ptr boost_interprocess_ptr.cpp)
+target_include_directories(comm_boost_interprocess_ptr PRIVATE ${Boost_INCLUDE_DIRS})
+target_link_libraries(comm_boost_interprocess_ptr PRIVATE Threads::Threads ${LIB_RT})
