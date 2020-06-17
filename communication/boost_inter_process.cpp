@@ -6,24 +6,47 @@
 #include <atomic>
 #include <string>
 #include <cassert>
-#include <ctime>
 #include <iostream>
 
 // c++ boost app dev P/302
-
+// P/304
+// mutex does not work in shared memory (hence the assert() in main())
+// if the shared variable (the atomic int) is not lockfree, I get an undefined behavior
 using AtomicT = std::atomic< int >;
+
+struct Segment
+{
+    boost::interprocess::managed_shared_memory seg;
+
+    Segment()
+    {
+        seg = boost::interprocess::managed_shared_memory(
+            boost::interprocess::open_or_create, "shm-cache", 1024 );
+    }
+
+    ~Segment()
+    {
+        seg.destroy< AtomicT >( "shm-counter" );
+        boost::interprocess::shared_memory_object::remove( "shm-cache" );
+    }
+};
 
 void server()
 {
-    boost::interprocess::managed_shared_memory segment(
-        boost::interprocess::open_or_create, "shm-cache", 1024 );
-    AtomicT& a = *segment.find_or_construct< AtomicT >( "shm-counter" )( 0 );
+    // this creates a (binary) file at:
+    // /dev/shm/shm-cache
+    // I can even probe the content sof this file, xxd /dev/shm/shm-cache
+    // the size of the segment must be big enough to fit the boost::interprocess specific data
+    // boost rounds it to the nearest larger value
+    Segment segment;
+    AtomicT& a = *segment.seg.find_or_construct< AtomicT >( "shm-counter" )( 0 );
     assert( std::atomic_is_lock_free( &a ) );
 
-    while (true) {
+    for ( char ch; std::cin >> ch; )
+    {
         a++;
-        sleep(1);
-        std::cout << a << '\n';
+        sleep( 1 );
+        std::cout << "press ctrl + d to stop: " << a << '\n';
     }
 }
 
@@ -32,9 +55,10 @@ void client()
     boost::interprocess::managed_shared_memory segment(
         boost::interprocess::open_or_create, "shm-cache", 1024 );
     AtomicT& a = *segment.find_or_construct< AtomicT >( "shm-counter" )( 0 );
-    while (true) {
+    while ( true )
+    {
         a++;
-        sleep(1);
+        sleep( 1 );
         std::cout << a << '\n';
     }
 }
