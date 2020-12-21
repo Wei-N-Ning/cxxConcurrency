@@ -8,3 +8,7 @@ target_link_libraries(comparisonToAtomic
     pthread)
 add_test(NAME "mutex::comparison"
     COMMAND comparisonToAtomic)
+
+add_executable(mutex_efficient_locking efficient_locking.cpp)
+target_link_libraries(mutex_efficient_locking PRIVATE doctest)
+add_test(NAME "mutex::efficient_locking_statement" COMMAND mutex_efficient_locking)
