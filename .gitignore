@@ -1,6 +1,7 @@
 .idea
 .vscode
 build
+build_docker
 cmake-build-debug
 .gdb_history
 *.swp
