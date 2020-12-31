@@ -32,6 +32,8 @@ struct Queue
 
     std::vector< Task > tasks{};
     std::atomic< Status > status{ Idle };
+    static_assert( std::atomic< Status >::is_always_lock_free );
+
     std::thread th{};
     std::mutex mu;
 
@@ -49,9 +51,10 @@ struct Queue
 
     void wait()
     {
+        AutoTimer::Timer atm( "waiting..." );
         while ( !tasks.empty() )
         {
-            std::this_thread::sleep_for( std::chrono::nanoseconds( 200 ) );
+            // std::this_thread::sleep_for( std::chrono::nanoseconds( 200 ) );
         }
     }
 
@@ -81,7 +84,7 @@ struct Queue
                     }
                     else
                     {
-                        std::this_thread::sleep_for( std::chrono::nanoseconds( 200 ) );
+                        // std::this_thread::sleep_for( std::chrono::nanoseconds( 200 ) );
                     }
                 }
             };
@@ -119,7 +122,7 @@ void test_pool( int numWorker )
     }
 }
 
-int main()
+void bench()
 {
     AutoTimer::Builder()
         .withLabel( "compare pool with serial execution" )
@@ -134,5 +137,24 @@ int main()
         .measure( "pool 6", []() { test_pool( 6 ); } )
         .measure( "pool 8", []() { test_pool( 8 ); } )
         .measure( "pool 12", []() { test_pool( 12 ); } );
+}
+
+int main()
+{
+    constexpr size_t numWorker = 8;
+    std::vector< Queue > children( numWorker );
+
+    for ( int i = 0; i < 80; ++i )
+    {
+        children[ i % numWorker ].enqueue( [ idx = i ]() {
+            //
+            fib( 20 + idx % 10 );
+        } );
+    }
+
+    for ( auto& child : children )
+    {
+        child.wait();
+    }
     return 0;
 }
