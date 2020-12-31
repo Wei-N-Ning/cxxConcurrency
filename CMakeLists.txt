@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.15)
 
-set(CMAKE_C_COMPILER gcc-9)
-set(CMAKE_CXX_COMPILER g++-9)
+set(CMAKE_C_COMPILER gcc-10)
+set(CMAKE_CXX_COMPILER g++-10)
 
 project(C++ConcurrencyExamples)
 
@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 enable_testing()
 add_subdirectory(vendor/doctest)
 
-set(CMAKE_BUILD_TYPE Release)
+#set(CMAKE_BUILD_TYPE Release)
 
 set(Boost_NO_SYSTEM_PATHS TRUE)
 set(Boost_USE_STATIC_LIBS TRUE)
