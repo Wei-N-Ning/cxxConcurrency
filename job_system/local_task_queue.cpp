@@ -11,6 +11,14 @@
 #include <atomic>
 #include <random>
 
+#include <autotimer.hh>
+
+// to test the idea of local worker queue
+
+// NOTE:
+// this version has some serious flaws! (crash)
+// also shows that the performance is suboptimal; with 12 workers the speedup is merely 3.5-3.6
+
 using Task = std::function< void() >;
 
 struct Queue
@@ -37,6 +45,14 @@ struct Queue
     {
         status = Complete;
         th.join();
+    }
+
+    void wait()
+    {
+        while ( !tasks.empty() )
+        {
+            std::this_thread::sleep_for( std::chrono::nanoseconds( 200 ) );
+        }
     }
 
     std::optional< Task > tryPopBack()
@@ -85,19 +101,38 @@ int fib( int n )
     return ( n > 2 ) ? fib( n - 1 ) + fib( n - 2 ) : 1;
 }
 
+void test_pool( int numWorker )
+{
+    std::vector< Queue > children( numWorker );
+
+    for ( int i = 0; i < 40; ++i )
+    {
+        children[ i % numWorker ].enqueue( [ idx = i ]() {
+            //
+            fib( 30 + idx % 10 );
+        } );
+    }
+
+    for ( auto& child : children )
+    {
+        child.wait();
+    }
+}
+
 int main()
 {
-    std::vector< Queue > children( 8 );
-
-    for ( int i = 0; i < 30; ++i )
-    {
-        for ( auto& child : children )
-        {
-            child.enqueue( [ idx = i ]() {
-                //
-                fib( 20 + idx % 10 );
-            } );
-        }
-    }
+    AutoTimer::Builder()
+        .withLabel( "compare pool with serial execution" )
+        .measure( "serial",
+                  []() {
+                      for ( int i = 0; i < 40; ++i )
+                      {
+                          fib( 30 + i % 10 );
+                      }
+                  } )
+        .measure( "pool 4", []() { test_pool( 4 ); } )
+        .measure( "pool 6", []() { test_pool( 6 ); } )
+        .measure( "pool 8", []() { test_pool( 8 ); } )
+        .measure( "pool 12", []() { test_pool( 12 ); } );
     return 0;
 }

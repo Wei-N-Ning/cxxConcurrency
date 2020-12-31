@@ -1,3 +1,3 @@
 
 add_executable(local_task_queue local_task_queue.cpp)
-target_link_libraries(local_task_queue PRIVATE Threads::Threads)
+target_link_libraries(local_task_queue PRIVATE Threads::Threads autotimer)

@@ -10,6 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 enable_testing()
 add_subdirectory(vendor/doctest)
+add_subdirectory(vendor/autotimer)
 
 #set(CMAKE_BUILD_TYPE Release)
 
