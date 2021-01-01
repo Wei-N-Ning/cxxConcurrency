@@ -1,0 +1,9 @@
+
+add_executable(task_system_local_task_queue local_task_queue.cpp)
+target_link_libraries(task_system_local_task_queue PRIVATE Threads::Threads autotimer)
+
+add_executable(task_system_mutex_to_queue mutex_to_queue.cpp)
+target_link_libraries(task_system_mutex_to_queue PRIVATE Threads::Threads autotimer)
+
+add_executable(task_system_task_stealing task_stealing.cpp)
+target_link_libraries(task_system_task_stealing PRIVATE Threads::Threads autotimer)
