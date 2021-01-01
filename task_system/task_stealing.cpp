@@ -39,6 +39,7 @@ struct Queue
     std::deque< Task > tasks{};
     std::thread th{};
     std::mutex mu;
+    std::vector< Queue* > siblings{};
 
     Queue()
     {
@@ -101,21 +102,27 @@ struct Queue
 struct Pool
 {
     std::vector< Queue > qs{};
+    std::mt19937 eng{ std::random_device()() };
+    std::uniform_int_distribution< size_t > dist;
+
+    Pool() = default;
 
     explicit Pool( size_t size ) : qs( size )
     {
+        dist.param( decltype( dist )::param_type( 0, qs.size() - 1 ) );
     }
 
-    [[nodiscard]] size_t randomIdx() const
+    [[nodiscard]] size_t randomIdx()
     {
-        static std::mt19937 eng{ std::random_device()() };
-        static std::uniform_int_distribution< size_t > dist{ 0, qs.size() - 1 };
         return dist( eng );
     }
 
     void post( const std::function< void() >& fun )
     {
-        qs[ randomIdx() ].enqueue( fun );
+        if ( !qs.empty() )
+        {
+            qs[ randomIdx() ].enqueue( fun );
+        }
     }
 
     void join()
@@ -139,6 +146,8 @@ int fib( int n )
 
 int main()
 {
+    Pool emptyP;
+
     Pool p{ 4 };
     for ( auto i = 0; i < 40; ++i )
     {
