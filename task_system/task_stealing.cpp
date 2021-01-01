@@ -9,11 +9,31 @@
 #include <optional>
 #include <random>
 #include <utility>
+#include <iostream>
 
 #include <autotimer.hh>
 
 // this example is based on local_task_queue.cpp and adds task-stealing capability
 //
+// on average it performs better than the non-stealing version, however:
+// - if the size of the work is not evenly divided by the number of queues, the "longest spine"
+//   will cause a noticeable slow down
+// - as the stealing is randomized, it does not actively look for the "longest spine", hence not
+//   mitigating the above situation.
+//
+// numWorks: 240 base: 27 max: 38
+// compare serial to pool
+//    serial :   5047001 micro (1 runs, fastest: 5047001, slowest: 5047001)
+//    pool 12:    910267 micro (1 runs, fastest: 910267, slowest: 910267) speedup: 5.54453
+// numWorks: 24 base: 38 max: 42
+// compare serial to pool
+//    serial :   8508607 micro (1 runs, fastest: 8508607, slowest: 8508607)
+//    pool 12:   1801398 micro (1 runs, fastest: 1801398, slowest: 1801398) speedup: 4.72334
+//
+
+// THOUGHTS:
+// - parameterize the work distribution strategy: randomize, round robin
+// - parameterize the job stealing strategy: randomize, look next
 
 enum class TaskStatus
 {
@@ -37,11 +57,22 @@ Task makePoisonPill()
 struct Queue
 {
     std::deque< Task > tasks{};
-    std::thread th{};
+    std::optional< std::thread > th{};
     std::mutex mu;
     std::vector< Queue* > siblings{};
+    std::mt19937 eng{ std::random_device()() };
+    std::uniform_int_distribution< size_t > dist{};
 
-    Queue()
+    std::optional< Queue* > randomSibling()
+    {
+        if ( siblings.empty() )
+        {
+            return std::nullopt;
+        }
+        return siblings[ dist( eng ) % siblings.size() ];
+    }
+
+    void initialize()
     {
         auto doWork = [ this ]() {
             while ( true )
@@ -57,6 +88,18 @@ struct Queue
                 }
                 else
                 {
+                    if ( auto optSibling = randomSibling(); optSibling.has_value() )
+                    {
+                        auto pSib = *optSibling;
+                        if ( auto optSiblingTask = pSib->tryPopFront();
+                             optSiblingTask.has_value()
+                             && optSiblingTask->first != TaskStatus::PoisonPill )
+                        {
+                            std::invoke( optSiblingTask->second );
+                            continue;
+                        }
+                    }
+
                     // avoid spinning for nothing
                     std::this_thread::sleep_for( std::chrono::nanoseconds( 200 ) );
                 }
@@ -64,6 +107,8 @@ struct Queue
         };
         th = std::thread( doWork );
     }
+
+    Queue() = default;
     Queue( const Queue& ) = delete;
     Queue( Queue&& ) = delete;
     Queue& operator=( const Queue& ) = delete;
@@ -71,7 +116,21 @@ struct Queue
 
     ~Queue()
     {
-        th.join();
+        if ( th.has_value() )
+        {
+            th->join();
+        }
+    }
+
+    void connectWithSiblings( std::vector< Queue >& qs )
+    {
+        for ( auto& q : qs )
+        {
+            if ( &q != this )
+            {
+                siblings.emplace_back( &q );
+            }
+        }
     }
 
     void done()
@@ -109,12 +168,16 @@ struct Pool
 
     explicit Pool( size_t size ) : qs( size )
     {
-        dist.param( decltype( dist )::param_type( 0, qs.size() - 1 ) );
+        for ( auto& q : qs )
+        {
+            q.connectWithSiblings( qs );
+            q.initialize();
+        }
     }
 
     [[nodiscard]] size_t randomIdx()
     {
-        return dist( eng );
+        return dist( eng ) % qs.size();
     }
 
     void post( const std::function< void() >& fun )
@@ -144,15 +207,53 @@ int fib( int n )
     return ( n > 2 ) ? fib( n - 1 ) + fib( n - 2 ) : 1;
 }
 
-int main()
+void test_functionality()
 {
+    // empty pool should not cause any issue for the implicit join()
     Pool emptyP;
 
-    Pool p{ 4 };
-    for ( auto i = 0; i < 40; ++i )
+    Pool p{ 12 };
+    for ( auto i = 0; i < 80; ++i )
     {
-        p.post( [ i ]() { fib( 30 + i % 10 ); } );
+        // work is distributed randomly (and may trigger randomized job-stealing)
+        p.post( [ i ]() { fib( 25 + i % 18 ); } );
     }
+    // explicit join
     p.join();
+}
+
+template < int numWorks, int baseWorkload, int maxWorkload >
+void quick_bench()
+{
+    std::cout << "numWorks: " << numWorks << " base: " << baseWorkload << " max: " << maxWorkload
+              << '\n';
+    AutoTimer::Builder()
+        .withLabel( "compare serial to pool" )
+        .measure(
+            //
+            "serial",
+            []() {
+                for ( auto i = 0; i < numWorks; ++i )
+                {
+                    fib( baseWorkload + i % ( maxWorkload - baseWorkload ) );
+                }
+            } )
+        .measure(
+            //
+            "pool 12",
+            []() {
+                Pool p( 12 );
+                for ( auto i = 0; i < numWorks; ++i )
+                {
+                    p.post( [ i ]() { fib( baseWorkload + i % ( maxWorkload - baseWorkload ) ); } );
+                }
+                p.join();
+            } );
+}
+
+int main()
+{
+    quick_bench< 240, 27, 38 >();
+    quick_bench< 24, 38, 42 >();
     return 0;
 }
