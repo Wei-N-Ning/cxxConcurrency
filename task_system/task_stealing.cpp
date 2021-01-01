@@ -34,6 +34,9 @@
 // THOUGHTS:
 // - parameterize the work distribution strategy: randomize, round robin
 // - parameterize the job stealing strategy: randomize, look next
+//
+// I tested that this combination gives me a slight better perf: <work-dist: random, stealing: look next>
+// this way the longest spine will be addressed quicker
 
 enum class TaskStatus
 {
@@ -54,22 +57,45 @@ Task makePoisonPill()
     return std::make_pair( TaskStatus::PoisonPill, []() {} );
 }
 
+enum class StealingStrategy
+{
+    LookNext,
+    Random,
+};
+
+enum class WorkDistStrategy
+{
+    RoundRobin,
+    Random,
+};
+
+template < StealingStrategy stealingStrategy >
 struct Queue
 {
     std::deque< Task > tasks{};
     std::optional< std::thread > th{};
     std::mutex mu;
     std::vector< Queue* > siblings{};
-    std::mt19937 eng{ std::random_device()() };
-    std::uniform_int_distribution< size_t > dist{};
 
-    std::optional< Queue* > randomSibling()
+    std::optional< Queue* > chooseSibling()
     {
         if ( siblings.empty() )
         {
             return std::nullopt;
         }
-        return siblings[ dist( eng ) % siblings.size() ];
+        if constexpr ( stealingStrategy == StealingStrategy::Random )
+        {
+            static std::mt19937 eng{ std::random_device()() };
+            static std::uniform_int_distribution< size_t > dist{};
+            return siblings[ dist( eng ) % siblings.size() ];
+        }
+        else
+        {
+            static size_t idx{ 0 };
+            auto p = siblings[ idx ];
+            idx = ( idx + 1 ) % siblings.size();
+            return p;
+        }
     }
 
     void initialize()
@@ -88,7 +114,7 @@ struct Queue
                 }
                 else
                 {
-                    if ( auto optSibling = randomSibling(); optSibling.has_value() )
+                    if ( auto optSibling = chooseSibling(); optSibling.has_value() )
                     {
                         auto pSib = *optSibling;
                         if ( auto optSiblingTask = pSib->tryPopFront();
@@ -158,11 +184,10 @@ struct Queue
     }
 };
 
+template < WorkDistStrategy workDistStrategy >
 struct Pool
 {
-    std::vector< Queue > qs{};
-    std::mt19937 eng{ std::random_device()() };
-    std::uniform_int_distribution< size_t > dist;
+    std::vector< Queue< StealingStrategy::LookNext > > qs{};
 
     Pool() = default;
 
@@ -175,16 +200,28 @@ struct Pool
         }
     }
 
-    [[nodiscard]] size_t randomIdx()
+    [[nodiscard]] size_t chooseQueue()
     {
-        return dist( eng ) % qs.size();
+        if constexpr ( workDistStrategy == WorkDistStrategy::Random )
+        {
+            static std::mt19937 eng{ std::random_device()() };
+            static std::uniform_int_distribution< size_t > dist;
+            return dist( eng ) % qs.size();
+        }
+        else
+        {
+            static size_t idx{ 0 };
+            auto ret = idx;
+            idx = ( idx + 1 ) / qs.size();
+            return ret;
+        }
     }
 
     void post( const std::function< void() >& fun )
     {
         if ( !qs.empty() )
         {
-            qs[ randomIdx() ].enqueue( fun );
+            qs[ chooseQueue() ].enqueue( fun );
         }
     }
 
@@ -209,6 +246,7 @@ int fib( int n )
 
 void test_functionality()
 {
+    using Pool = Pool< WorkDistStrategy::Random >;
     // empty pool should not cause any issue for the implicit join()
     Pool emptyP;
 
@@ -242,7 +280,7 @@ void quick_bench()
             //
             "pool 12",
             []() {
-                Pool p( 12 );
+                Pool< WorkDistStrategy::Random > p( 12 );
                 for ( auto i = 0; i < numWorks; ++i )
                 {
                     p.post( [ i ]() { fib( baseWorkload + i % ( maxWorkload - baseWorkload ) ); } );
@@ -255,5 +293,9 @@ int main()
 {
     quick_bench< 240, 27, 38 >();
     quick_bench< 24, 38, 42 >();
+
+    quick_bench< 233, 27, 38 >();
+    quick_bench< 25, 38, 42 >();
+
     return 0;
 }
