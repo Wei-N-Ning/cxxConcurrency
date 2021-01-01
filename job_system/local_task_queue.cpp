@@ -108,15 +108,15 @@ int fib( int n )
     return ( n > 2 ) ? fib( n - 1 ) + fib( n - 2 ) : 1;
 }
 
-void test_pool( int numWorker )
+void test_pool( int numWorker, int numWorks, int mi, int mx )
 {
     std::vector< Queue > children( numWorker );
 
-    for ( int i = 0; i < 40; ++i )
+    for ( int idx = 0; idx < numWorks; ++idx )
     {
-        children[ i % numWorker ].enqueue( [ idx = i ]() {
+        children[ idx % numWorker ].enqueue( [ idx, mi, mx ]() {
             //
-            fib( 20 + idx % 10 );
+            fib( mi + idx % ( mx - mi ) );
         } );
     }
 
@@ -128,33 +128,48 @@ void test_pool( int numWorker )
 
 void bench()
 {
+    constexpr int numWorks = 100;
+    constexpr int baseWorkload = 30;
+    constexpr int maxWorkload = 42;
     AutoTimer::Builder()
         .withLabel( "compare pool with serial execution" )
-        .measure( "serial",
-                  []() {
-                      for ( int i = 0; i < 40; ++i )
-                      {
-                          fib( 30 + i % 10 );
-                      }
-                  } )
-        .measure( "pool 4", []() { test_pool( 4 ); } )
-        .measure( "pool 6", []() { test_pool( 6 ); } )
-        .measure( "pool 8", []() { test_pool( 8 ); } )
-        .measure( "pool 12", []() { test_pool( 12 ); } );
+        .measure(
+            //
+            "serial",
+            []() {
+                for ( int i = 0; i < numWorks; ++i )
+                {
+                    fib( baseWorkload + i % ( maxWorkload - baseWorkload ) );
+                }
+            } )
+        .measure(
+            //
+            []() {
+                std::cout << "pool 4" << '\n';
+                test_pool( 4, numWorks, baseWorkload, maxWorkload );
+            } )
+        .measure(
+            //
+            []() {
+                std::cout << "pool 6" << '\n';
+                test_pool( 6, numWorks, baseWorkload, maxWorkload );
+            } )
+        .measure(
+            //
+            []() {
+                std::cout << "pool 8" << '\n';
+                test_pool( 8, numWorks, baseWorkload, maxWorkload );
+            } )
+        .measure(
+            //
+            []() {
+                std::cout << "pool 12" << '\n';
+                test_pool( 12, numWorks, baseWorkload, maxWorkload );
+            } );
 }
 
 int main()
 {
-    AutoTimer::Builder()
-        .withMultiplier( 50 )
-        .measure( []() { test_pool( 1 ); } )
-        .measure( []() { test_pool( 2 ); } )
-        .measure( []() { test_pool( 3 ); } )
-        .measure( []() { test_pool( 4 ); } )
-        .measure( []() { test_pool( 5 ); } )
-        .measure( []() { test_pool( 6 ); } )
-        .measure( []() { test_pool( 7 ); } )
-        .measure( []() { test_pool( 8 ); } );
-
+    bench();
     return 0;
 }
