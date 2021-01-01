@@ -35,8 +35,12 @@
 // - parameterize the work distribution strategy: randomize, round robin
 // - parameterize the job stealing strategy: randomize, look next
 //
-// I tested that this combination gives me a slight better perf: <work-dist: random, stealing: look next>
+// this combination gives me a slight better perf: <work-dist: random, stealing: look next>
 // this way the longest spine will be addressed quicker
+
+// NEXT STEP:
+// - use std::packaged_task and future to curate the return value and side effects
+// - make it suitable to write parallel algorithm, such as transform_reduce
 
 enum class TaskStatus
 {
