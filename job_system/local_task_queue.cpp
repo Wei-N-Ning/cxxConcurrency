@@ -10,6 +10,7 @@
 #include <optional>
 #include <atomic>
 #include <random>
+#include <utility>
 
 #include <autotimer.hh>
 
@@ -19,25 +20,54 @@
 // this version has some serious flaws! (crash)
 // also shows that the performance is suboptimal; with 12 workers the speedup is merely 3.5-3.6
 
-using Task = std::function< void() >;
+enum class TaskStatus
+{
+    Normal,
+    PoisonPill,
+};
+
+using Task = std::pair< TaskStatus, std::function< void() > >;
+
+template < typename Function >
+Task makeTask( Function&& f )
+{
+    return std::make_pair( TaskStatus::Normal, std::forward< Function >( f ) );
+}
+
+Task makePoisonPill()
+{
+    return std::make_pair( TaskStatus::PoisonPill, []() {} );
+}
 
 struct Queue
 {
-    enum Status
-    {
-        Idle,
-        Running,
-        Complete,
-    };
-
     std::vector< Task > tasks{};
-    std::atomic< Status > status{ Idle };
-    static_assert( std::atomic< Status >::is_always_lock_free );
-
     std::thread th{};
     std::mutex mu;
 
-    Queue() = default;
+    Queue()
+    {
+        auto doWork = [ this ]() {
+            while ( true )
+            {
+                if ( auto opt = this->tryPopBack(); opt.has_value() )
+                {
+                    auto& [ status, t ] = *opt;
+                    if ( status == TaskStatus::PoisonPill )
+                    {
+                        break;
+                    }
+                    std::invoke( t );
+                }
+                else
+                {
+                    // avoid spinning for nothing
+                    std::this_thread::sleep_for( std::chrono::nanoseconds( 200 ) );
+                }
+            }
+        };
+        th = std::thread( doWork );
+    }
     Queue( const Queue& ) = delete;
     Queue( Queue&& ) = delete;
     Queue& operator=( const Queue& ) = delete;
@@ -45,17 +75,13 @@ struct Queue
 
     ~Queue()
     {
-        status = Complete;
         th.join();
     }
 
-    void wait()
+    void done()
     {
-        AutoTimer::Timer atm( "waiting..." );
-        while ( !tasks.empty() )
-        {
-            // std::this_thread::sleep_for( std::chrono::nanoseconds( 200 ) );
-        }
+        std::lock_guard l{ mu };
+        tasks.emplace_back( makePoisonPill() );
     }
 
     std::optional< Task > tryPopBack()
@@ -70,32 +96,10 @@ struct Queue
         return t;
     }
 
-    void enqueue( const Task& task )
+    void enqueue( const std::function< void() >& fun )
     {
-        if ( status == Idle )
-        {
-            auto doWork = [ this, &task ]() {
-                std::invoke( task );
-                while ( this->status == Running )
-                {
-                    if ( auto t = tryPopBack(); t.has_value() )
-                    {
-                        std::invoke( *t );
-                    }
-                    else
-                    {
-                        // std::this_thread::sleep_for( std::chrono::nanoseconds( 200 ) );
-                    }
-                }
-            };
-            status = Running;
-            th = std::thread( doWork );
-        }
-        else if ( status == Running )
-        {
-            std::lock_guard l{ mu };
-            tasks.emplace_back( task );
-        }
+        std::lock_guard l{ mu };
+        tasks.emplace_back( makeTask( fun ) );
     }
 };
 
@@ -112,13 +116,13 @@ void test_pool( int numWorker )
     {
         children[ i % numWorker ].enqueue( [ idx = i ]() {
             //
-            fib( 30 + idx % 10 );
+            fib( 20 + idx % 10 );
         } );
     }
 
     for ( auto& child : children )
     {
-        child.wait();
+        child.done();
     }
 }
 
@@ -141,20 +145,16 @@ void bench()
 
 int main()
 {
-    constexpr size_t numWorker = 8;
-    std::vector< Queue > children( numWorker );
+    AutoTimer::Builder()
+        .withMultiplier( 50 )
+        .measure( []() { test_pool( 1 ); } )
+        .measure( []() { test_pool( 2 ); } )
+        .measure( []() { test_pool( 3 ); } )
+        .measure( []() { test_pool( 4 ); } )
+        .measure( []() { test_pool( 5 ); } )
+        .measure( []() { test_pool( 6 ); } )
+        .measure( []() { test_pool( 7 ); } )
+        .measure( []() { test_pool( 8 ); } );
 
-    for ( int i = 0; i < 80; ++i )
-    {
-        children[ i % numWorker ].enqueue( [ idx = i ]() {
-            //
-            fib( 20 + idx % 10 );
-        } );
-    }
-
-    for ( auto& child : children )
-    {
-        child.wait();
-    }
     return 0;
 }
