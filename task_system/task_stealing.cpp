@@ -293,6 +293,25 @@ void quick_bench()
             } );
 }
 
+void test_scaling()
+{
+    constexpr int numWorks = 80;
+    constexpr int baseWorkload = 20;
+    constexpr int maxWorkload = 38;
+    AutoTimer::Builder()
+        .withLabel( "test pool scaling by increasing the number of works" )
+        .withScaling( AutoTimer::Scaling::makeLinear( "num workers", 1, 13 ) )
+        .withMultiplier(10)
+        .measure( []( int numWorkers ) {
+            Pool< WorkDistStrategy::Random > p( numWorkers );
+            for ( auto i = 0; i < numWorks; ++i )
+            {
+                p.post( [ i ]() { fib( baseWorkload + i % ( maxWorkload - baseWorkload ) ); } );
+            }
+            p.join();
+        } );
+}
+
 int main()
 {
     quick_bench< 240, 27, 38 >();
@@ -300,6 +319,8 @@ int main()
 
     quick_bench< 233, 27, 38 >();
     quick_bench< 25, 38, 42 >();
+
+    test_scaling();
 
     return 0;
 }
